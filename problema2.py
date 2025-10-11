@@ -1,11 +1,10 @@
 from pathlib import Path
-
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 
 BASE_DIR = Path(__name__).parent
-IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_vacio.png"
+IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_05.png"
 
 img = cv2.imread(str(IMAGE_PATH), cv2.IMREAD_GRAYSCALE)
 
@@ -44,13 +43,16 @@ plt.show(block=False)
 # luego contamos píxeles no nulos por fila.
 
 horizontal_projection = np.count_nonzero(img_neg == 255, axis=1)
-index = np.argwhere(horizontal_projection > 900)
+max_index = np.max(horizontal_projection)
+max_index
+index = np.argwhere(horizontal_projection > 90*max_index/100)
 
 lista = []
-ant = 9
+ant = index[0]
+ult = index[-1]
 
 for i in index.flatten():
-    if i == 9 or i == 486:
+    if i == ant or i == ult:
         continue
 
     if i == ant + 1:
@@ -60,17 +62,72 @@ for i in index.flatten():
         lista.append((start, end))
     ant = i
 
+
 vertical_projection = np.count_nonzero(img_neg == 255, axis=0)
-vertical_projection
 
-index_vert = np.argwhere(vertical_projection > 400)
-index_si_no = np.argwhere(vertical_projection > 170)
-
-index_vert
+max_index_vert = np.max(vertical_projection)
+index_si_no = np.argwhere(vertical_projection > 90*max_index_vert/100)
 index_si_no
 
-inicio_reg = 315
-final_reg_medio = 616
-inicio_reg_medio = 618
-final_reg = 920
+inicio_vert = index_si_no[2] + 2
+final_vert = index_si_no[-1] - 1
+
+lista.pop(5)
+lista.pop(0)
+
+def desempaque_coor(lista, inicio, final):
+    dic = {}
+    arriba, abajo = lista.pop(0)
+    dic['inicio_izq'] = (arriba, inicio)
+    dic['inicio_der'] = (arriba, final)
+    dic['final_izq'] = (abajo, inicio)
+    dic['final_der'] = (abajo, final)
+    return dic
+
+lista_campos = ["coor_ape_nomb", "coor_edad", "coor_mail", "coor_legajo", "coor_preg1", "coor_preg2", "coor_preg3", "coor_coment"]
+
+diccionario_coordenadas = {}
+
+for nombre_campo in lista_campos:
+    diccionario_coordenadas[nombre_campo] = desempaque_coor(lista, inicio_vert, final_vert)
+   
+
+# Graficar puntos rojos en las coordenadas guardadas en el diccionario sobre img_thresh
+plt.figure(figsize=(8, 8))
+plt.imshow(img_thresh, cmap="gray")
+plt.title("Coordenadas detectadas sobre la imagen binaria")
+plt.axis("off")
+
+for campo, coords in diccionario_coordenadas.items():
+    for nombre, (y, x) in coords.items():
+        plt.plot(x, y, 'ro')  # 'ro' = punto rojo
+        plt.text(x + 5, y, campo, color='red', fontsize=8)  # Opcional: etiqueta
+
+plt.show()
+
+def recortar_por_coordenadas(img, coords):
+    """
+    Recorta una región de la imagen usando 4 coordenadas:
+    'inicio_izq', 'inicio_der', 'final_izq', 'final_der'
+    """
+    y_inicio, x_inicio = coords['inicio_izq']
+    y_fin, x_fin = coords['final_der']
+    
+   
+    y1 = int(y_inicio)
+    x1 = int(x_inicio)
+    y2 = int(y_fin)
+    x2 = int(x_fin)
+
+    return img[y1:y2, x1:x2]
+
+
+for campo, coor in diccionario_coordenadas.items():
+    recorte = recortar_por_coordenadas(img, coor)
+    plt.figure()
+    plt.imshow(recorte, cmap="gray")
+    plt.title(f"Recorte: {campo}")
+    plt.axis("off")
+    plt.show()
+
 
