@@ -64,7 +64,7 @@ plt.show(block=False)
 espacio_entre_lineas = np.diff(indices_lineas)
 espacio_entre_columnas = np.diff(indices_columnas)
 
-# Se consideran como saltos aquellos espacios mayores a 1
+# Se consideran como saltos aquellos espacios mayores a 1, indican espacios en blanco entre líneas o columnas
 salto_lineas = np.where(espacio_entre_lineas > 1)[0]
 salto_columnas = np.where(espacio_entre_columnas > 1)[0]
 
@@ -82,32 +82,87 @@ coordenadas_finales_columnas = [int(np.mean(grupo)) for grupo in grupo_columnas]
 fig, ax = plt.subplots(constrained_layout=True)
 
 # Mostrar la imagen binarizada
-ax.imshow(img_thresh, cmap='gray')
+ax.imshow(img_thresh, cmap="gray")
 
 # Superponer las líneas horizontales detectadas
 for y in coordenadas_finales_lineas:
-    ax.axhline(y, color='red', linestyle='--', linewidth=2)
+    ax.axhline(y, color="red", linestyle="--", linewidth=2)
 
 # Superponer las líneas verticales detectadas
 for x in coordenadas_finales_columnas:
-    ax.axvline(x, color='cyan', linestyle='--', linewidth=2)
+    ax.axvline(x, color="cyan", linestyle="--", linewidth=2)
 
 ax.set_title("Detección de Cuadrícula Superpuesta")
-ax.axis('off')
+ax.axis("off")
 plt.show(block=False)
 
 formulario = {
-    'nombre_apellido': (coordenadas_finales_lineas[1], coordenadas_finales_lineas[2], coordenadas_finales_columnas[1], coordenadas_finales_columnas[3]),
-    'edad': (coordenadas_finales_lineas[2], coordenadas_finales_lineas[3], coordenadas_finales_columnas[1], coordenadas_finales_columnas[3]),
-    'mail': (coordenadas_finales_lineas[3], coordenadas_finales_lineas[4], coordenadas_finales_columnas[1], coordenadas_finales_columnas[3]),
-    'legajo': (coordenadas_finales_lineas[4], coordenadas_finales_lineas[5], coordenadas_finales_columnas[1], coordenadas_finales_columnas[3]),
-    'pregunta_1_si': (coordenadas_finales_lineas[5], coordenadas_finales_lineas[6], coordenadas_finales_columnas[1], coordenadas_finales_columnas[2]),
-    'pregunta_1_no': (coordenadas_finales_lineas[5], coordenadas_finales_lineas[6], coordenadas_finales_columnas[2], coordenadas_finales_columnas[3]),
-    'pregunta_2_si': (coordenadas_finales_lineas[6], coordenadas_finales_lineas[7], coordenadas_finales_columnas[1], coordenadas_finales_columnas[2]),
-    'pregunta_2_no': (coordenadas_finales_lineas[6], coordenadas_finales_lineas[7], coordenadas_finales_columnas[2], coordenadas_finales_columnas[3]),
-    'pregunta_3_si': (coordenadas_finales_lineas[7], coordenadas_finales_lineas[8], coordenadas_finales_columnas[1], coordenadas_finales_columnas[2]),
-    'pregunta_3_no': (coordenadas_finales_lineas[7], coordenadas_finales_lineas[8], coordenadas_finales_columnas[2], coordenadas_finales_columnas[3]),
-    'comentarios': (coordenadas_finales_lineas[8], coordenadas_finales_lineas[10], coordenadas_finales_columnas[1], coordenadas_finales_columnas[3]),
+    "nombre_apellido": (
+        coordenadas_finales_lineas[1],
+        coordenadas_finales_lineas[2],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[3],
+    ),
+    "edad": (
+        coordenadas_finales_lineas[2],
+        coordenadas_finales_lineas[3],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[3],
+    ),
+    "mail": (
+        coordenadas_finales_lineas[3],
+        coordenadas_finales_lineas[4],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[3],
+    ),
+    "legajo": (
+        coordenadas_finales_lineas[4],
+        coordenadas_finales_lineas[5],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[3],
+    ),
+    "pregunta_1_si": (
+        coordenadas_finales_lineas[5],
+        coordenadas_finales_lineas[6],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[2],
+    ),
+    "pregunta_1_no": (
+        coordenadas_finales_lineas[5],
+        coordenadas_finales_lineas[6],
+        coordenadas_finales_columnas[2],
+        coordenadas_finales_columnas[3],
+    ),
+    "pregunta_2_si": (
+        coordenadas_finales_lineas[6],
+        coordenadas_finales_lineas[7],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[2],
+    ),
+    "pregunta_2_no": (
+        coordenadas_finales_lineas[6],
+        coordenadas_finales_lineas[7],
+        coordenadas_finales_columnas[2],
+        coordenadas_finales_columnas[3],
+    ),
+    "pregunta_3_si": (
+        coordenadas_finales_lineas[7],
+        coordenadas_finales_lineas[8],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[2],
+    ),
+    "pregunta_3_no": (
+        coordenadas_finales_lineas[7],
+        coordenadas_finales_lineas[8],
+        coordenadas_finales_columnas[2],
+        coordenadas_finales_columnas[3],
+    ),
+    "comentarios": (
+        coordenadas_finales_lineas[8],
+        coordenadas_finales_lineas[10],
+        coordenadas_finales_columnas[1],
+        coordenadas_finales_columnas[3],
+    ),
 }
 
 formulario
