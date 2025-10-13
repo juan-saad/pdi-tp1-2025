@@ -3,9 +3,10 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Rectangle
 
 BASE_DIR = Path(__name__).parent
-IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_vacio.png"
+IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_01.png"
 
 img = cv2.imread(str(IMAGE_PATH), cv2.IMREAD_GRAYSCALE)
 
@@ -75,8 +76,8 @@ grupo_columnas = np.split(indices_columnas, salto_columnas + 1)
 
 # Se calcula la media de cada grupo para obtener una única coordenada representativa
 # Se convierte a entero para usar como coordenada de píxel
-coordenadas_finales_lineas = [int(np.mean(grupo)) for grupo in grupo_lineas]
-coordenadas_finales_columnas = [int(np.mean(grupo)) for grupo in grupo_columnas]
+coordenadas_finales_lineas = [np.mean(grupo) for grupo in grupo_lineas]
+coordenadas_finales_columnas = [np.mean(grupo) for grupo in grupo_columnas]
 
 # Visualización de los resultados
 fig, ax = plt.subplots(constrained_layout=True)
@@ -86,83 +87,152 @@ ax.imshow(img_thresh, cmap="gray")
 
 # Superponer las líneas horizontales detectadas
 for y in coordenadas_finales_lineas:
-    ax.axhline(y, color="red", linestyle="--", linewidth=2)
+    ax.axhline(float(y), color="red", linestyle="--", linewidth=2)
 
 # Superponer las líneas verticales detectadas
 for x in coordenadas_finales_columnas:
-    ax.axvline(x, color="cyan", linestyle="--", linewidth=2)
+    ax.axvline(float(x), color="cyan", linestyle="--", linewidth=2)
 
 ax.set_title("Detección de Cuadrícula Superpuesta")
 ax.axis("off")
 plt.show(block=False)
 
+# Diccionario de tuplas con las coordenadas de las regiones del formulario
+# Cada tupla tiene la forma (punto superior izquierdo, punto inferior derecho, punto superior izquierdo, punto inferior derecho)
 formulario = {
     "nombre_apellido": (
-        coordenadas_finales_lineas[1],
-        coordenadas_finales_lineas[2],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[1] + 1.5),
+        int(coordenadas_finales_lineas[2] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "edad": (
-        coordenadas_finales_lineas[2],
-        coordenadas_finales_lineas[3],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[2] + 1.5),
+        int(coordenadas_finales_lineas[3] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "mail": (
-        coordenadas_finales_lineas[3],
-        coordenadas_finales_lineas[4],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[3] + 1.5),
+        int(coordenadas_finales_lineas[4] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "legajo": (
-        coordenadas_finales_lineas[4],
-        coordenadas_finales_lineas[5],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[4] + 1.5),
+        int(coordenadas_finales_lineas[5] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "pregunta_1_si": (
-        coordenadas_finales_lineas[5],
-        coordenadas_finales_lineas[6],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[2],
+        int(coordenadas_finales_lineas[6] + 1.5),
+        int(coordenadas_finales_lineas[7] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[2] - 1.5),
     ),
     "pregunta_1_no": (
-        coordenadas_finales_lineas[5],
-        coordenadas_finales_lineas[6],
-        coordenadas_finales_columnas[2],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[6] + 1.5),
+        int(coordenadas_finales_lineas[7] - 1.5),
+        int(coordenadas_finales_columnas[2] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "pregunta_2_si": (
-        coordenadas_finales_lineas[6],
-        coordenadas_finales_lineas[7],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[2],
+        int(coordenadas_finales_lineas[7] + 1.5),
+        int(coordenadas_finales_lineas[8] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[2] - 1.5),
     ),
     "pregunta_2_no": (
-        coordenadas_finales_lineas[6],
-        coordenadas_finales_lineas[7],
-        coordenadas_finales_columnas[2],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[7] + 1.5),
+        int(coordenadas_finales_lineas[8] - 1.5),
+        int(coordenadas_finales_columnas[2] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "pregunta_3_si": (
-        coordenadas_finales_lineas[7],
-        coordenadas_finales_lineas[8],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[2],
+        int(coordenadas_finales_lineas[8] + 1.5),
+        int(coordenadas_finales_lineas[9] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[2] - 1.5),
     ),
     "pregunta_3_no": (
-        coordenadas_finales_lineas[7],
-        coordenadas_finales_lineas[8],
-        coordenadas_finales_columnas[2],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[8] + 1.5),
+        int(coordenadas_finales_lineas[9] - 1.5),
+        int(coordenadas_finales_columnas[2] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
     "comentarios": (
-        coordenadas_finales_lineas[8],
-        coordenadas_finales_lineas[10],
-        coordenadas_finales_columnas[1],
-        coordenadas_finales_columnas[3],
+        int(coordenadas_finales_lineas[9] + 1.5),
+        int(coordenadas_finales_lineas[10] - 1.5),
+        int(coordenadas_finales_columnas[1] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
     ),
 }
 
-formulario
+# Visualización de los centros de cada región del formulario
+fig, ax = plt.subplots(constrained_layout=True)
+ax.imshow(img_thresh, cmap="gray")
+
+for campo, (y_min, y_max, x_min, x_max) in formulario.items():
+    corners = [
+        (x_min, y_min),
+        (x_min, y_max),
+        (x_max, y_min),
+        (x_max, y_max),
+    ]
+    for x_val, y_val in corners:
+        ax.scatter(x_val, y_val, color="red", s=30)
+    ax.text(x_min + 5, y_min + 15, campo, color="red", fontsize=8)
+
+ax.set_title("Centros detectados del formulario")
+ax.axis("off")
+plt.show(block=False)
+
+zona_interes = {}
+
+for key in formulario.keys():
+    y_min, y_max, x_min, x_max = formulario[key]
+    zona_interes[key] = img_thresh[y_min:y_max, x_min:x_max]
+
+# Visualización de las regiones de interés
+n_celdas = len(zona_interes)
+n_cols = min(3, n_celdas)
+n_rows = int(np.ceil(n_celdas / n_cols))
+
+fig, axes = plt.subplots(n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), constrained_layout=True)
+if isinstance(axes, np.ndarray):
+    ejes = axes.ravel()
+else:
+    ejes = [axes]
+
+for ax, (campo, roi) in zip(ejes, zona_interes.items()):
+    ax.imshow(roi, cmap="gray", vmin=0, vmax=255)
+    ax.set_title(campo)
+    ax.axis("off")
+
+for ax in ejes[len(zona_interes) :]:
+    ax.remove()
+
+plt.show(block=False)
+
+
+# TODO - Queda pendiente generar las funciones para validar caracteres y cantidad de palabras, se puede usar lo que tenemos abajo como ejemplo.
+
+for campo, roi in zona_interes.items():
+    roi_binaria = (roi == 0).astype(np.uint8)
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+
+    # celda_img es tu imagen binaria de entrada
+
+    # 1. Definir un kernel rectangular para fusionar horizontalmente
+    # El ancho (ej. 5 o 7) debe ser mayor que el espacio entre las letras.
+    # El alto (ej. 1) asegura que no se fusionen líneas de texto cercanas.
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 1))
+
+    # 2. Aplicar la dilatación para conectar letras cercanas
+    imagen_fusionada = cv2.dilate(roi_binaria, kernel, iterations=2)
+
+    # 3. Aplicar connectedComponentsWithStats a la imagen fusionada
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+
+    fig, ax = plt.subplots(constrained_layout=True)
+    ax.imshow(imagen_fusionada, cmap="gray", vmin=0, vmax=255)
