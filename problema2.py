@@ -216,7 +216,7 @@ plt.show(block=False)
 
 
 # TODO - Queda pendiente generar las funciones para validar caracteres y cantidad de palabras, se puede usar lo que tenemos abajo como ejemplo.
-
+'''
 for campo, roi in zona_interes.items():
     roi_binaria = (roi == 0).astype(np.uint8)
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
@@ -236,3 +236,55 @@ for campo, roi in zona_interes.items():
 
     fig, ax = plt.subplots(constrained_layout=True)
     ax.imshow(imagen_fusionada, cmap="gray", vmin=0, vmax=255)
+'''
+
+# ... Su código de ConnectedComponentsWithStats
+
+for campo, roi in zona_interes.items():
+    roi_binaria = (roi == 0).astype(np.uint8)
+    '''
+    # 1. Dilatación para fusionar caracteres de una misma palabra (como ya tiene en su código)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 1))
+    imagen_fusionada = cv2.dilate(roi_binaria, kernel, iterations=2)
+
+    '''
+    
+    # **Usamos la imagen fusionada para encontrar palabras, no caracteres.**
+    # Pero si quiere contar caracteres y luego palabras, use 'roi_binaria'
+    # para 'connectedComponentsWithStats' y siga los pasos de aquí:
+    
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+
+    # Solo analizar si se detectó más de un objeto (más allá del fondo)
+    if num_labels > 1:
+        # 1. Preparar y Ordenar los Centroides
+        centroides_objetos = centroids[1:]
+        centroides_ordenados = centroides_objetos[centroides_objetos[:, 0].argsort()]
+        
+        # 2. Calcular las Distancias Horizontales
+        x_coordenadas = centroides_ordenados[:, 0]
+        distancias_x = np.diff(x_coordenadas)
+        
+        # 3. Determinar un Umbral de Distancia
+        mediana_distancia = np.median(distancias_x)
+        umbral_distancia = mediana_distancia * 2.0  # Factor de 2.0 como punto de partida
+        
+        # 4. Identificar los Saltos de Palabra
+        indices_saltos_palabra = np.where(distancias_x > umbral_distancia)[0]
+        
+        # El número de palabras es igual a la cantidad de saltos + 1
+        numero_palabras = len(indices_saltos_palabra) + 1
+        
+        # El número de caracteres es la cantidad total de componentes (sin el fondo)
+        numero_caracteres = num_labels - 1
+        
+        print(f"Campo: {campo}")
+        print(f"  Caracteres detectados: {numero_caracteres}")
+        print(f"  Palabras estimadas: {numero_palabras}")
+        print(f"  Distancias entre centroides (fragmento): {distancias_x[:5]}")
+        print(f"  Umbral de distancia (T): {umbral_distancia:.2f}")
+
+    else:
+        print(f"Campo: {campo}. No se detectaron objetos/caracteres.")
+
+# ... Su código de visualización
