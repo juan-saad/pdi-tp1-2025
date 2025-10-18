@@ -3,10 +3,9 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.patches import Rectangle
 
 BASE_DIR = Path(__name__).parent
-IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_01.png"
+IMAGE_PATH = BASE_DIR / "imagenes" / "formulario_05.png"
 
 img = cv2.imread(str(IMAGE_PATH), cv2.IMREAD_GRAYSCALE)
 
@@ -100,6 +99,12 @@ plt.show(block=False)
 # Diccionario de tuplas con las coordenadas de las regiones del formulario
 # Cada tupla tiene la forma (punto superior izquierdo, punto inferior derecho, punto superior izquierdo, punto inferior derecho)
 formulario = {
+    "tipo_formulario": (
+        int(coordenadas_finales_lineas[0] + 1.5),
+        int(coordenadas_finales_lineas[1] - 1.5),
+        int(coordenadas_finales_columnas[0] + 1.5),
+        int(coordenadas_finales_columnas[3] - 1.5),
+    ),
     "nombre_apellido": (
         int(coordenadas_finales_lineas[1] + 1.5),
         int(coordenadas_finales_lineas[2] - 1.5),
@@ -214,77 +219,94 @@ for ax in ejes[len(zona_interes) :]:
 
 plt.show(block=False)
 
+# Prueba para ver los centroides en el campo "mail"
+roi = zona_interes["mail"]
+roi_binaria = (roi == 0).astype(np.uint8)
+num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
 
-# TODO - Queda pendiente generar las funciones para validar caracteres y cantidad de palabras, se puede usar lo que tenemos abajo como ejemplo.
-'''
-for campo, roi in zona_interes.items():
+centroids[1:][:,0].argsort()
+
+# Visualizar ROI con centroides
+fig, ax = plt.subplots(constrained_layout=True)
+ax.imshow(roi, cmap="gray", vmin=0, vmax=255)
+
+for i in range(1, num_labels):
+    cx, cy = centroids[i]
+    ax.scatter(cx, cy, color="red", s=50, marker="x", linewidths=2)
+    ax.text(cx + 3, cy + 3, str(i), color="red", fontsize=8)
+
+ax.set_title(f"Centroides detectados: mail ({num_labels - 1} componentes)")
+plt.show(block=False)
+
+def calcular_caracteres(roi: np.ndarray) -> int:
     roi_binaria = (roi == 0).astype(np.uint8)
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+    num_labels, _, _, _ = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+    return num_labels - 1
 
-    # celda_img es tu imagen binaria de entrada
-
-    # 1. Definir un kernel rectangular para fusionar horizontalmente
-    # El ancho (ej. 5 o 7) debe ser mayor que el espacio entre las letras.
-    # El alto (ej. 1) asegura que no se fusionen líneas de texto cercanas.
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 1))
-
-    # 2. Aplicar la dilatación para conectar letras cercanas
-    imagen_fusionada = cv2.dilate(roi_binaria, kernel, iterations=2)
-
-    # 3. Aplicar connectedComponentsWithStats a la imagen fusionada
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
-
-    fig, ax = plt.subplots(constrained_layout=True)
-    ax.imshow(imagen_fusionada, cmap="gray", vmin=0, vmax=255)
-'''
-
-# ... Su código de ConnectedComponentsWithStats
-
-for campo, roi in zona_interes.items():
+def calcular_palabras(roi: np.ndarray, campo: str) -> int:
+    umbrales_espacios = {
+        "nombre_apellido": 21,
+        "edad": 21,
+        "mail": 26,
+        "legajo": 24
+    }    
+    
     roi_binaria = (roi == 0).astype(np.uint8)
-    '''
-    # 1. Dilatación para fusionar caracteres de una misma palabra (como ya tiene en su código)
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 1))
-    imagen_fusionada = cv2.dilate(roi_binaria, kernel, iterations=2)
-
-    '''
+    num_labels, _, _, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
     
-    # **Usamos la imagen fusionada para encontrar palabras, no caracteres.**
-    # Pero si quiere contar caracteres y luego palabras, use 'roi_binaria'
-    # para 'connectedComponentsWithStats' y siga los pasos de aquí:
-    
-    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(roi_binaria, connectivity=8, ltype=cv2.CV_32S)
+    numero_palabras = 0
 
-    # Solo analizar si se detectó más de un objeto (más allá del fondo)
     if num_labels > 1:
-        # 1. Preparar y Ordenar los Centroides
         centroides_objetos = centroids[1:]
         centroides_ordenados = centroides_objetos[centroides_objetos[:, 0].argsort()]
         
-        # 2. Calcular las Distancias Horizontales
         x_coordenadas = centroides_ordenados[:, 0]
         distancias_x = np.diff(x_coordenadas)
         
-        # 3. Determinar un Umbral de Distancia
-        mediana_distancia = np.median(distancias_x)
-        umbral_distancia = mediana_distancia * 2.0  # Factor de 2.0 como punto de partida
+        indices_saltos_palabra = np.where(distancias_x > umbrales_espacios[campo])[0]
         
-        # 4. Identificar los Saltos de Palabra
-        indices_saltos_palabra = np.where(distancias_x > umbral_distancia)[0]
-        
-        # El número de palabras es igual a la cantidad de saltos + 1
         numero_palabras = len(indices_saltos_palabra) + 1
-        
-        # El número de caracteres es la cantidad total de componentes (sin el fondo)
-        numero_caracteres = num_labels - 1
-        
-        print(f"Campo: {campo}")
-        print(f"  Caracteres detectados: {numero_caracteres}")
-        print(f"  Palabras estimadas: {numero_palabras}")
-        print(f"  Distancias entre centroides (fragmento): {distancias_x[:5]}")
-        print(f"  Umbral de distancia (T): {umbral_distancia:.2f}")
-
     else:
         print(f"Campo: {campo}. No se detectaron objetos/caracteres.")
 
-# ... Su código de visualización
+    return numero_palabras
+
+resultado_validaciones = {
+    "nombre_apellido": {
+        "caracteres": calcular_caracteres(zona_interes["nombre_apellido"]) <= 25,
+        "palabras": calcular_palabras(zona_interes["nombre_apellido"], "nombre_apellido") > 1,
+    },
+    "edad": {
+        "caracteres": calcular_caracteres(zona_interes["edad"]) >= 2 and calcular_caracteres(zona_interes["edad"]) <= 3,
+        "palabras": calcular_palabras(zona_interes["edad"], "edad") == 1,
+    },
+    "mail": {
+        "caracteres": calcular_caracteres(zona_interes["mail"]) <= 25,
+        "palabras": calcular_palabras(zona_interes["mail"], "mail") == 1,
+    },
+    "legajo": {
+        "caracteres": calcular_caracteres(zona_interes["legajo"]) == 8,
+        "palabras": calcular_palabras(zona_interes["legajo"], "legajo") == 1,
+    },
+    "pregunta_1": {
+        "caracteres": calcular_caracteres(zona_interes["pregunta_1_si"]) + calcular_caracteres(zona_interes["pregunta_1_no"]) == 1,
+        "palabras": True,
+    },
+    "pregunta_2": {
+        "caracteres": calcular_caracteres(zona_interes["pregunta_2_si"]) + calcular_caracteres(zona_interes["pregunta_2_no"]) == 1,
+        "palabras": True,
+    },
+    "pregunta_3": {
+        "caracteres": calcular_caracteres(zona_interes["pregunta_3_si"]) + calcular_caracteres(zona_interes["pregunta_3_no"]) == 1,
+        "palabras": True,
+    },
+    "comentarios": {
+        "caracteres": calcular_caracteres(zona_interes["comentarios"]) <= 25,
+        "palabras": calcular_caracteres(zona_interes["comentarios"]) >= 1, # Al menos un carácter determina una unica palabra
+    },
+}
+
+for campo, resultados in resultado_validaciones.items():
+    # Guardar un booleano para mantener el tipo homogéneo en el diccionario
+    resultados["es_valido"] = all(resultados.values())
+    print(f"Campo: {campo}, Resultado: {resultados["es_valido"]}")
