@@ -3,6 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import Tuple, Dict
+import csv
 
 
 def _centro_valido(centroides: np.ndarray) -> Tuple[int, int]:
@@ -34,9 +35,11 @@ def generar_roi(
     n_rows = int(np.ceil(n_celdas / n_cols))
 
     if mostrar_graficos:
-        _, axes = plt.subplots(
+        fig, axes = plt.subplots(
             n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), constrained_layout=True
         )
+        fig.suptitle("Regiones de interés detectadas", fontsize=16)
+        
         if isinstance(axes, np.ndarray):
             ejes = axes.ravel()
         else:
@@ -253,7 +256,7 @@ def buscar_coordenadas_formulario(
                 ax.scatter(x_val, y_val, color="red", s=30)
             ax.text(x_min + 5, y_min + 15, campo, color="red", fontsize=8)
 
-        ax.set_title("Centros detectados del formulario")
+        ax.set_title("Coordenadas detectadas del formulario")
         ax.axis("off")
         plt.show(block=False)
 
@@ -267,7 +270,9 @@ def generar_imagen_binarizada(
     img_thresh: np.ndarray
 
     # Combina la bandera binaria con el algoritmo Otsu para hallar el umbral automáticamente.
-    _, img_thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    val, img_thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    print(f"Umbral calculado por OTSU: {val}")
 
     if mostrar_graficos:
         _, axes = plt.subplots(1, 2, constrained_layout=True, sharex=True, sharey=True)
@@ -297,6 +302,8 @@ def calcular_palabras(roi: np.ndarray, campo: str) -> int:
         centroides_ordenados = centroides_objetos[centroides_objetos[:, 0].argsort()]
 
         x_coordenadas = centroides_ordenados[:, 0]
+        
+        # Con las distancias en X calculamos los saltos entre palabras
         distancias_x = np.diff(x_coordenadas)
 
         indices_saltos_palabra = np.where(distancias_x > umbrales_espacios[campo])[0]
@@ -326,8 +333,6 @@ def analisis_formulario(
     num_labels, _, _, centroids = cv2.connectedComponentsWithStats(
         roi_binaria, connectivity=8, ltype=cv2.CV_32S
     )
-
-    centroids[1:][:, 0].argsort()
 
     if mostrar_graficos:
         # Visualizar ROI con centroides
@@ -418,10 +423,14 @@ for formulario in formularios:
 formulario_mas_grande = max(imagenes, key=lambda im: im.shape[0])
 canva = np.ones_like(formulario_mas_grande) * 255
 
-# Punto A y B
-for i, img in enumerate(imagenes):
-    resultado_validaciones, es_valido = analisis_formulario(img, False)
+encabezados = ["id", "nombre y apellido", "edad", "mail", "legajo", "pregunta 1", "pregunta 2", "pregunta 3", "comentarios"]
+filas = []
 
+# Punto A
+for i, img in enumerate(imagenes):
+    resultado_validaciones, es_valido = analisis_formulario(img, True)
+
+    # Punto B
     print(f"Formulario {formularios[i].name}:")
     for campo, resultados in resultado_validaciones.items():
         resultado = "OK" if resultados["es_valido"] else "MAL"
@@ -446,6 +455,28 @@ for i, img in enumerate(imagenes):
 
     canva[y_min + (i * 60) : y_max + (i * 60), x_min:x_max] = marca
 
+    filas.append([
+        formularios[i].stem,
+        "OK" if resultado_validaciones["nombre_apellido"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["edad"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["mail"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["legajo"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["pregunta_1"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["pregunta_2"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["pregunta_3"]["es_valido"] else "MAL",
+        "OK" if resultado_validaciones["comentarios"]["es_valido"] else "MAL",
+    ])
+    
+
 fig, ax = plt.subplots(constrained_layout=True)
 ax.imshow(canva, cmap="gray", vmin=0, vmax=255)
 plt.show(block=False)
+
+# Punto D
+csv_path = BASE_DIR / "resultados_formularios.csv"
+with open(csv_path, "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(encabezados)
+    writer.writerows(filas)
+
+print(f"CSV guardado en: {csv_path}")

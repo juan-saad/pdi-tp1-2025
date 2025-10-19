@@ -1,0 +1,6 @@
+id,nombre y apellido,edad,mail,legajo,pregunta 1,pregunta 2,pregunta 3,comentarios
+formulario_01,OK,OK,OK,OK,OK,OK,OK,OK
+formulario_02,MAL,MAL,MAL,MAL,MAL,MAL,MAL,MAL
+formulario_03,OK,OK,OK,OK,OK,OK,OK,OK
+formulario_04,MAL,MAL,MAL,MAL,OK,MAL,MAL,MAL
+formulario_05,OK,MAL,OK,OK,MAL,MAL,MAL,OK
