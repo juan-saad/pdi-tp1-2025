@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
 def ecualizar_local_manual(img_original, M, N):
     """
     Implementa la Ecualización Local del Histograma manualmente con ventana deslizante.
@@ -80,6 +81,52 @@ def ecualizar_local_manual(img_original, M, N):
 
     return img_ecualizada
 
+'''
+def ecualizar_local (img_original, M, N):
+    """
+    Implementa la Ecualización Local del Histograma con ventana deslizante
+    utilizando cv2.equalizeHist() en cada vecindario.
+
+    """
+    if M % 2 == 0 or N % 2 == 0:
+        raise ValueError("El tamaño de la ventana (M, N) debe ser impar para tener un centro.")
+
+    # Se obtienen las dimenciones de la imagen de entrada
+    H, W = img_original.shape
+
+    img_ecualizada = np.zeros_like(img_original, dtype=np.uint8)
+
+    m_pad = M // 2
+    n_pad = N // 2
+
+    # Agregar bordes a la imagen 
+    img_con_borde = cv2.copyMakeBorder(
+        img_original,
+        m_pad, m_pad, n_pad, n_pad,
+        cv2.BORDER_REPLICATE
+    )
+    
+    # Bucle Principal: Ventana Deslizante
+    for i in range(H):
+        for j in range(W):
+            # 2.1. Definir la Ventana (Vecindario)
+            ventana = img_con_borde[i : i + M, j : j + N]
+            
+            # 2.2. Aplicar cv2.equalizeHist() a la ventana
+            # Esto produce una imagen pequeña (MxN) donde todos los píxeles están ecualizados
+            ventana_ecualizada = cv2.equalizeHist(ventana)
+            
+            # 2.3. Obtener el Píxel Central Transformado
+            
+            # En la ventana_ecualizada, el píxel central (m_pad, n_pad) 
+            # es el resultado de la transformación para el píxel (i, j)
+            nuevo_valor = ventana_ecualizada[m_pad, n_pad]
+            
+            # Asignar el nuevo valor a la imagen de salida
+            img_ecualizada[i, j] = nuevo_valor
+
+    return img_ecualizada
+
 # -----------------------------------------------------------------------------
 # PROGRAMA PRINCIPAL
 # -----------------------------------------------------------------------------
@@ -87,45 +134,111 @@ def ecualizar_local_manual(img_original, M, N):
 BASE_DIR = Path(__name__).parent
 IMAGE_PATH = BASE_DIR  / "pdi-tp1-2025" / "imagenes" / "Imagen_con_detalles_escondidos.tif"
 
-# Parámetros (M y N deben ser impares)
-M = 25 # Alto de la ventana
-N = 25 # Ancho de la ventana
-
+'''
 # Muestro la imágen original
 img_original_normal = cv2.imread(IMAGE_PATH)
+
 
 plt.imshow(img_original_normal)
 plt.axis('off')
 plt.show()
 
 '''
-# Cargar la imagen en escala de grises
-img_original = cv2.imread(RUTA_IMAGEN, cv2.IMREAD_GRAYSCALE)
-'''
 
+# Cargar la imagen en escala de grises
+img_original = cv2.imread(IMAGE_PATH, cv2.IMREAD_GRAYSCALE)
+
+'''
 img_original = cv2.imread(str(IMAGE_PATH), cv2.IMREAD_GRAYSCALE)
 
-# Muestro la imágen original en escala de grises
-plt.imshow(img_original)
-plt.axis('off')
-plt.show()
+'''
 
-# Aplicar un filtro de la mediana para eliminar el ruido fino antes de la ecualización.
-# 3 es un tamaño de kernel pequeño que preserva los bordes.
-img_suavizada = cv2.medianBlur(img_original, 3) 
-
-# Muestro la imágen suavizada (opcional)
-plt.imshow(img_suavizada, cmap='gray'); plt.axis('off'); plt.title('Imagen Suavizada'); plt.show()
-
-# kernel de 25X25
 if img_original is None:
     print(f"Error: No se pudo cargar la imagen en la ruta: {IMAGE_PATH}")
+
 else:
+    # Muestro la imágen original en escala de grises
+    plt.imshow(img_original)
+    plt.axis('off')
+    plt.show()
+
+    # Aplicar un filtro de la mediana para eliminar el ruido fino antes de la ecualización.
+    # 3 es un tamaño de kernel pequeño que preserva los bordes.
+    img_suavizada = cv2.medianBlur(img_original, 3) 
+
+    # Muestro la imágen suavizada
+    plt.imshow(img_suavizada, cmap='gray'); plt.axis('off'); plt.title('Imagen Suavizada'); plt.show()
+
+    #---------------------------------------------------------------------------------------------------
+
+    # VENTANA DE 25X25 (TAMAÑO MEDIANO)
+
+    # Parámetros (M y N deben ser impares)
+    M = 25 # Alto de la ventana
+    N = 25 # Ancho de la ventana
+    '''
     print(f"Iniciando ecualización local manual con ventana {M}x{N}. Esto puede tomar tiempo...")
-    
+    '''
     # Aplicar la función
-    #img_procesada = ecualizar_local_manual(img_original, M, N)
-    img_procesada = ecualizar_local_manual(img_suavizada, M, N) 
+    img_procesada = ecualizar_local(img_suavizada, M, N)
+    
+    print("¡Procesamiento completado!")
+
+    # Mostrar los resultados
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+    axes[0].imshow(img_original, cmap='gray')
+    axes[0].set_title('1. Imagen Original')
+    axes[0].axis('off')
+
+    axes[1].imshow(img_procesada, cmap='gray')
+    axes[1].set_title(f'2. Ecualización Local Manual (Ventana {M}x{N})')
+    axes[1].axis('off')
+
+    plt.suptitle('Problema 1 - Ecualización Local de Histograma Manual', fontsize=16)
+    plt.show()
+
+    #-------------------------------------------------------------------------------------------
+
+    # VENTANA DE 5X5 (TAMAÑO CHICO)
+
+    # Parámetros (M y N deben ser impares)
+    M = 5 # Alto de la ventana
+    N = 5 # Ancho de la ventana
+    '''
+    print(f"Iniciando ecualización local manual con ventana {M}x{N}. Esto puede tomar tiempo...")
+    '''
+    # Aplicar la función
+    img_procesada = ecualizar_local(img_suavizada, M, N) 
+    
+    print("¡Procesamiento completado!")
+
+    # Mostrar los resultados
+    fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+    axes[0].imshow(img_original, cmap='gray')
+    axes[0].set_title('1. Imagen Original')
+    axes[0].axis('off')
+
+    axes[1].imshow(img_procesada, cmap='gray')
+    axes[1].set_title(f'2. Ecualización Local Manual (Ventana {M}x{N})')
+    axes[1].axis('off')
+
+    plt.suptitle('Problema 1 - Ecualización Local de Histograma Manual', fontsize=16)
+    plt.show()
+
+    #-------------------------------------------------------------------------------------
+
+    # VENTANA DE 75X75 (TAMAÑO GRANDE)
+
+    # Parámetros (M y N deben ser impares)
+    M = 75 # Alto de la ventana
+    N = 75 # Ancho de la ventana
+    '''
+    print(f"Iniciando ecualización local manual con ventana {M}x{N}. Esto puede tomar tiempo...")
+    '''
+    # Aplicar la función
+    img_procesada = ecualizar_local(img_suavizada, M, N) 
     
     print("¡Procesamiento completado!")
 
