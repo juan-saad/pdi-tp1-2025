@@ -26,6 +26,29 @@ python -c "import numpy, matplotlib, cv2; print('Imports OK')"
 
 ## Ejecución
 
+### Problema 1 - Ecualización local de histograma
+
+Para ejecutar el análisis:
+
+```powershell
+python problema1.py
+```
+
+ó
+
+Seleccionar todas las lineas del programa y apretar la combinación de teclas `Shift + Enter`
+
+**Este script**:
+
+- Procesa la imagen `Imagen_con_detalles_escondidos.tif` de la carpeta `imagenes/`.
+- Aplica ecualización de histograma **global** usando `cv2.equalizeHist()`.
+- Aplica ecualización de histograma **local** con ventanas deslizantes de diferentes tamaños (5×5, 25×25, 75×75).
+- Incluye suavizado previo con filtro de mediana (`cv2.medianBlur`) para reducir ruido tipo sal y pimienta.
+- Genera visualizaciones comparativas de:
+  - Imagen original vs. ecualizada (global y local)
+  - Histogramas de frecuencia, histogramas normalizados y funciones de distribución acumulada (CDF)
+- Permite observar el impacto del tamaño de ventana en la ecualización local y cómo se revelan detalles ocultos en la imagen.
+
 ### Problema 2 - Análisis de Formularios
 
 Para ejecutar el análisis de formularios:
