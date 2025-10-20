@@ -7,6 +7,8 @@ import csv
 
 
 def _centro_valido(centroides: np.ndarray) -> Tuple[int, int]:
+    """Calcula un centro válido a partir de los centroides detectados. Usa el último centroide ordenado por X, o el centroide del fondo si la imagen no tiene componentes válidos."""
+    
     centros = centroides[centroides[:, 0].argsort()]
     cx = float(centros[-1][0])
     cy = float(centros[-1][1])
@@ -23,6 +25,8 @@ def generar_roi(
     img: np.ndarray,
     mostrar_graficos: bool = True,
 ) -> dict[str, np.ndarray]:
+    """Extrae las regiones de interés (ROI) de la imagen según las coordenadas dadas."""
+    
     zona_interes = {}
 
     for key in coordenadas.keys():
@@ -59,6 +63,8 @@ def generar_roi(
 
 
 def dibujar_check(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
+    """Dibuja una marca de verificación (check) en la imagen en la posición indicada."""
+    
     x, y = centro
 
     print(f"Dibujando check en: ({x}, {y})")
@@ -70,6 +76,8 @@ def dibujar_check(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndar
 
 
 def dibujar_x(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
+    """Dibuja una X en la imagen en la posición indicada."""
+    
     x, y = centro
     offset = 15
 
@@ -80,6 +88,8 @@ def dibujar_x(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
 
 
 def calcular_caracteres(roi: np.ndarray) -> int:
+    """Cuenta el número de componentes conectados (caracteres) en la región de interés."""
+    
     roi_binaria = (roi == 0).astype(np.uint8)
     num_labels, _, _, _ = cv2.connectedComponentsWithStats(
         roi_binaria, connectivity=8, ltype=cv2.CV_32S
@@ -90,6 +100,8 @@ def calcular_caracteres(roi: np.ndarray) -> int:
 def buscar_coordenadas_formulario(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> dict[str, tuple[int, int, int, int]]:
+    """Detecta las coordenadas de los campos del formulario usando proyecciones horizontal y vertical."""
+    
     # Analisis de la imagen binarizada
     # Se obtienen las proyecciones horizontal y vertical de la imagen binarizada
     # Se suman los pixeles negros (0) en cada fila y columna
@@ -266,6 +278,8 @@ def buscar_coordenadas_formulario(
 def generar_imagen_binarizada(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> np.ndarray:
+    """Binariza la imagen usando el método de Otsu para calcular el umbral automáticamente."""
+    
     # Esto está para ayudar a pylance a inferir el tipo
     img_thresh: np.ndarray
 
@@ -288,6 +302,8 @@ def generar_imagen_binarizada(
 
 
 def calcular_palabras(roi: np.ndarray, campo: str) -> int:
+    """Cuenta el número de palabras en la región de interés según distancias entre centroides."""
+    
     umbrales_espacios = {"nombre_apellido": 21, "edad": 21, "mail": 26, "legajo": 24}
 
     roi_binaria = (roi == 0).astype(np.uint8)
@@ -318,6 +334,8 @@ def calcular_palabras(roi: np.ndarray, campo: str) -> int:
 def analisis_formulario(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> Tuple[Dict[str, Dict[str, bool]], bool]:
+    """Analiza un formulario completo, validando cada campo según criterios específicos de caracteres y palabras."""
+    
     img.dtype
     img.dtype
 
@@ -426,11 +444,10 @@ canva = np.ones_like(formulario_mas_grande) * 255
 encabezados = ["id", "nombre y apellido", "edad", "mail", "legajo", "pregunta 1", "pregunta 2", "pregunta 3", "comentarios"]
 filas = []
 
-# Punto A
+# Punto A y B
 for i, img in enumerate(imagenes):
     resultado_validaciones, es_valido = analisis_formulario(img, True)
 
-    # Punto B
     print(f"Formulario {formularios[i].name}:")
     for campo, resultados in resultado_validaciones.items():
         resultado = "OK" if resultados["es_valido"] else "MAL"
