@@ -8,7 +8,7 @@ import csv
 
 def _centro_valido(centroides: np.ndarray) -> Tuple[int, int]:
     """Calcula un centro válido a partir de los centroides detectados. Usa el último centroide ordenado por X, o el centroide del fondo si la imagen no tiene componentes válidos."""
-    
+
     centros = centroides[centroides[:, 0].argsort()]
     cx = float(centros[-1][0])
     cy = float(centros[-1][1])
@@ -26,7 +26,7 @@ def generar_roi(
     mostrar_graficos: bool = True,
 ) -> dict[str, np.ndarray]:
     """Extrae las regiones de interés (ROI) de la imagen según las coordenadas dadas."""
-    
+
     zona_interes = {}
 
     for key in coordenadas.keys():
@@ -43,11 +43,9 @@ def generar_roi(
             n_rows, n_cols, figsize=(4 * n_cols, 3 * n_rows), constrained_layout=True
         )
         fig.suptitle("Regiones de interés detectadas", fontsize=16)
-        
-        if isinstance(axes, np.ndarray):
-            ejes = axes.ravel()
-        else:
-            ejes = [axes]
+
+        # axes es de tipo numpy.ndarray
+        ejes = axes.flatten()
 
         for ax, (campo, roi) in zip(ejes, zona_interes.items()):
             ax.imshow(roi, cmap="gray", vmin=0, vmax=255)
@@ -64,10 +62,8 @@ def generar_roi(
 
 def dibujar_check(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
     """Dibuja una marca de verificación (check) en la imagen en la posición indicada."""
-    
-    x, y = centro
 
-    print(f"Dibujando check en: ({x}, {y})")
+    x, y = centro
     offset = 15
 
     cv2.line(img, (x - offset, y), (x, y + offset), 0, grosor)
@@ -77,11 +73,10 @@ def dibujar_check(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndar
 
 def dibujar_x(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
     """Dibuja una X en la imagen en la posición indicada."""
-    
+
     x, y = centro
     offset = 15
 
-    print(f"Dibujando x en: ({x}, {y})")
     cv2.line(img, (x - offset, y - offset), (x + offset, y + offset), 0, grosor)
     cv2.line(img, (x - offset, y + offset), (x + offset, y - offset), 0, grosor)
     return img
@@ -89,7 +84,7 @@ def dibujar_x(img: np.ndarray, centro: Tuple[int, int], grosor=2) -> np.ndarray:
 
 def calcular_caracteres(roi: np.ndarray) -> int:
     """Cuenta el número de componentes conectados (caracteres) en la región de interés."""
-    
+
     roi_binaria = (roi == 0).astype(np.uint8)
     num_labels, _, _, _ = cv2.connectedComponentsWithStats(
         roi_binaria, connectivity=8, ltype=cv2.CV_32S
@@ -101,7 +96,7 @@ def buscar_coordenadas_formulario(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> dict[str, tuple[int, int, int, int]]:
     """Detecta las coordenadas de los campos del formulario usando proyecciones horizontal y vertical."""
-    
+
     # Analisis de la imagen binarizada
     # Se obtienen las proyecciones horizontal y vertical de la imagen binarizada
     # Se suman los pixeles negros (0) en cada fila y columna
@@ -161,7 +156,7 @@ def buscar_coordenadas_formulario(
         _, ax = plt.subplots(constrained_layout=True)
 
         # Mostrar la imagen binarizada
-        ax.imshow(img, cmap="gray")
+        ax.imshow(img, cmap="gray", vmin=0, vmax=255)
 
         # Superponer las líneas horizontales detectadas
         for y in coordenadas_finales_lineas:
@@ -255,7 +250,7 @@ def buscar_coordenadas_formulario(
     if mostrar_graficos:
         # Visualización de los centros de cada región del formulario
         _, ax = plt.subplots(constrained_layout=True)
-        ax.imshow(img, cmap="gray")
+        ax.imshow(img, cmap="gray", vmin=0, vmax=255)
 
         for campo, (y_min, y_max, x_min, x_max) in formulario.items():
             corners = [
@@ -279,21 +274,21 @@ def generar_imagen_binarizada(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> np.ndarray:
     """Binariza la imagen usando el método de Otsu para calcular el umbral automáticamente."""
-    
+
     # Esto está para ayudar a pylance a inferir el tipo
     img_thresh: np.ndarray
 
     # Combina la bandera binaria con el algoritmo Otsu para hallar el umbral automáticamente.
     val, img_thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    
-    print(f"Umbral calculado por OTSU: {val}")
+
+    print(f"Umbral calculado por OTSU: {val}\n")
 
     if mostrar_graficos:
         _, axes = plt.subplots(1, 2, constrained_layout=True, sharex=True, sharey=True)
-        axes[0].imshow(img, cmap="gray")
+        axes[0].imshow(img, cmap="gray", vmin=0, vmax=255)
         axes[0].set_title("Imagen original")
 
-        axes[1].imshow(img_thresh, cmap="gray")
+        axes[1].imshow(img_thresh, cmap="gray", vmin=0, vmax=255)
         axes[1].set_title("Binaria + OTSU")
 
         plt.show(block=False)
@@ -303,7 +298,7 @@ def generar_imagen_binarizada(
 
 def calcular_palabras(roi: np.ndarray, campo: str) -> int:
     """Cuenta el número de palabras en la región de interés según distancias entre centroides."""
-    
+
     umbrales_espacios = {"nombre_apellido": 21, "edad": 21, "mail": 26, "legajo": 24}
 
     roi_binaria = (roi == 0).astype(np.uint8)
@@ -318,7 +313,7 @@ def calcular_palabras(roi: np.ndarray, campo: str) -> int:
         centroides_ordenados = centroides_objetos[centroides_objetos[:, 0].argsort()]
 
         x_coordenadas = centroides_ordenados[:, 0]
-        
+
         # Con las distancias en X calculamos los saltos entre palabras
         distancias_x = np.diff(x_coordenadas)
 
@@ -335,7 +330,7 @@ def analisis_formulario(
     img: np.ndarray, mostrar_graficos: bool = True
 ) -> Tuple[Dict[str, Dict[str, bool]], bool]:
     """Analiza un formulario completo, validando cada campo según criterios específicos de caracteres y palabras."""
-    
+
     img.dtype
     img.dtype
 
@@ -421,79 +416,117 @@ def analisis_formulario(
     )
 
 
-BASE_DIR = Path(__name__).parent
+def main():
+    """Función principal que procesa todos los formularios y genera resultados."""
 
-imagenes_path = BASE_DIR / "imagenes"
-formularios = sorted(
-    p for p in imagenes_path.glob("formulario_*.png") if p.stem != "formulario_vacio"
-)
+    try:
+        BASE_DIR = Path(__file__).parent
+    except NameError:
+        BASE_DIR = Path.cwd()
 
-imagenes = []
-
-for formulario in formularios:
-    img = cv2.imread(str(formulario), cv2.IMREAD_GRAYSCALE)
-
-    if img is None:
-        raise FileNotFoundError(f"No se pudo cargar la imagen en la ruta: {formulario}")
-
-    imagenes.append(img)
-
-formulario_mas_grande = max(imagenes, key=lambda im: im.shape[0])
-canva = np.ones_like(formulario_mas_grande) * 255
-
-encabezados = ["id", "nombre y apellido", "edad", "mail", "legajo", "pregunta 1", "pregunta 2", "pregunta 3", "comentarios"]
-filas = []
-
-# Punto A y B
-for i, img in enumerate(imagenes):
-    resultado_validaciones, es_valido = analisis_formulario(img, True)
-
-    print(f"Formulario {formularios[i].name}:")
-    for campo, resultados in resultado_validaciones.items():
-        resultado = "OK" if resultados["es_valido"] else "MAL"
-        print(f"{campo}: {resultado}")
-
-    # Punto C
-    img_thresh = generar_imagen_binarizada(img, False)
-    formulario = buscar_coordenadas_formulario(img_thresh, False)
-    zona_interes = generar_roi(formulario, img_thresh, False)
-
-    num_labels, _, _, centroids = cv2.connectedComponentsWithStats(
-        zona_interes["nombre_apellido"], connectivity=8, ltype=cv2.CV_32S
+    imagenes_path = BASE_DIR / "imagenes"
+    formularios = sorted(
+        p
+        for p in imagenes_path.glob("formulario_*.png")
+        if p.stem != "formulario_vacio"
     )
 
-    y_min, y_max, x_min, x_max = formulario["nombre_apellido"]
+    imagenes = []
 
-    marca = (
-        dibujar_check(zona_interes["nombre_apellido"], _centro_valido(centroids))
-        if es_valido
-        else dibujar_x(zona_interes["nombre_apellido"], _centro_valido(centroids))
-    )
+    for formulario in formularios:
+        imagenes.append(cv2.imread(str(formulario), cv2.IMREAD_GRAYSCALE))
 
-    canva[y_min + (i * 60) : y_max + (i * 60), x_min:x_max] = marca
+    encabezados = [
+        "id",
+        "nombre y apellido",
+        "edad",
+        "mail",
+        "legajo",
+        "pregunta 1",
+        "pregunta 2",
+        "pregunta 3",
+        "comentarios",
+    ]
+    filas = []
+    canvases = []
 
-    filas.append([
-        formularios[i].stem,
-        "OK" if resultado_validaciones["nombre_apellido"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["edad"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["mail"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["legajo"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["pregunta_1"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["pregunta_2"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["pregunta_3"]["es_valido"] else "MAL",
-        "OK" if resultado_validaciones["comentarios"]["es_valido"] else "MAL",
-    ])
-    
+    # Punto A y B
+    for i, img in enumerate(imagenes):
+        resultado_validaciones, es_valido = analisis_formulario(img, False)
 
-fig, ax = plt.subplots(constrained_layout=True)
-ax.imshow(canva, cmap="gray", vmin=0, vmax=255)
-plt.show(block=False)
+        print("--------------------------------\n")
+        print(f"Formulario {formularios[i].name}:")
+        for campo, resultados in resultado_validaciones.items():
+            resultado = "OK" if resultados["es_valido"] else "MAL"
+            print(f"  - {campo}: {resultado}")
 
-# Punto D
-csv_path = BASE_DIR / "resultados_formularios.csv"
-with open(csv_path, "w", newline="", encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerow(encabezados)
-    writer.writerows(filas)
+        print("\n--------------------------------\n")
 
-print(f"CSV guardado en: {csv_path}")
+        img_thresh = generar_imagen_binarizada(img, False)
+        formulario = buscar_coordenadas_formulario(img_thresh, False)
+        zona_interes = generar_roi(formulario, img_thresh, False)
+
+        _, _, _, centroids = cv2.connectedComponentsWithStats(
+            zona_interes["nombre_apellido"], connectivity=8, ltype=cv2.CV_32S
+        )
+
+        marca = (
+            dibujar_check(zona_interes["nombre_apellido"], _centro_valido(centroids))
+            if es_valido
+            else dibujar_x(zona_interes["nombre_apellido"], _centro_valido(centroids))
+        )
+
+        canvases.append(marca)
+
+        filas.append(
+            [
+                formularios[i].stem,
+                (
+                    "OK"
+                    if resultado_validaciones["nombre_apellido"]["es_valido"]
+                    else "MAL"
+                ),
+                "OK" if resultado_validaciones["edad"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["mail"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["legajo"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["pregunta_1"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["pregunta_2"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["pregunta_3"]["es_valido"] else "MAL",
+                "OK" if resultado_validaciones["comentarios"]["es_valido"] else "MAL",
+            ]
+        )
+
+    # Visualizar el plot con los resultados - Punto C
+    n_formularios = len(canvases)
+    n_rows = n_formularios
+    n_cols = 1
+
+    fig, axes = plt.subplots(n_rows, n_cols, constrained_layout=True)
+    fig.suptitle("Resumen de validaciones", fontsize=16)
+
+    ejes = axes.flatten()
+
+    for idx, (canvas, formulario_path) in enumerate(zip(canvases, formularios)):
+        ejes[idx].imshow(canvas, cmap="gray", vmin=0, vmax=255)
+        ejes[idx].set_title(formulario_path.stem, fontsize=12)
+        ejes[idx].axis("off")
+
+    plt.show(block=False)
+
+    # Guardar la imagen del plot - Punto C
+    imagen_path = BASE_DIR / "resultados_formularios.png"
+    fig.savefig(imagen_path)
+    print(f"\nImagen guardada en: {imagen_path}")
+
+    # Punto D
+    csv_path = BASE_DIR / "resultados_formularios.csv"
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(encabezados)
+        writer.writerows(filas)
+
+    print(f"\nCSV guardado en: {csv_path}")
+
+
+if __name__ == "__main__":
+    main()
