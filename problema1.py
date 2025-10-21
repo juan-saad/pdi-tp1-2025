@@ -157,6 +157,8 @@ def main() -> None:
         "2. Imagen original ecualizada (global)",
     )
 
+    histograma(img_eq_global)
+
     # Ecualizacion local con ventana 25x25 directamente sobre la imagen original
     img_procesada_25x25 = procesar_con_ventana(
         img_original, 25, 25, mostrar_histograma=False
