@@ -2,9 +2,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Tuple
 
 
-def histograma(img):
+def histograma(img: np.ndarray) -> None:
     """Muestra la imagen original, su histograma de frecuencias y el histograma normalizado con su funcion de suma acumulada."""
 
     # Mostrar la imagen
@@ -53,7 +54,40 @@ def histograma(img):
     plt.show(block=False)
 
 
-def ecualizar_local(img_original, M, N):
+def mostrar_comparacion(
+    img1: np.ndarray,
+    img2: np.ndarray,
+    titulo1: str,
+    titulo2: str,
+    figsize: Tuple[int, int] = (15, 6),
+) -> None:
+    """Muestra dos imágenes lado a lado para comparación."""
+    _, axes = plt.subplots(1, 2, figsize=figsize)
+
+    axes[0].imshow(img1, cmap="gray", vmin=0, vmax=255)
+    axes[0].set_title(titulo1)
+    axes[0].axis("off")
+
+    axes[1].imshow(img2, cmap="gray", vmin=0, vmax=255)
+    axes[1].set_title(titulo2)
+    axes[1].axis("off")
+
+    plt.show(block=False)
+
+
+def procesar_con_ventana(
+    img: np.ndarray, M: int, N: int, mostrar_histograma: bool = True
+) -> np.ndarray:
+    """Aplica ecualización local con ventana MxN y opcionalmente muestra el histograma."""
+    img_procesada = ecualizar_local(img, M, N)
+
+    if mostrar_histograma:
+        histograma(img_procesada)
+
+    return img_procesada
+
+
+def ecualizar_local(img_original: np.ndarray, M: int, N: int) -> np.ndarray:
     """Aplica ecualización de histograma local con ventana MxN usando cv2.equalizeHist en cada vecindario."""
 
     if M % 2 == 0 or N % 2 == 0:
@@ -96,7 +130,7 @@ def ecualizar_local(img_original, M, N):
     return img_ecualizada
 
 
-def main():
+def main() -> None:
     """Programa principal: carga imagen, aplica ecualización global y local con diferentes tamaños de ventana."""
 
     try:
@@ -116,141 +150,46 @@ def main():
 
     # Ecualización Global con OpenCV
     img_eq_global = cv2.equalizeHist(img_original)
-
-    # Mostrar original y equalizada global lado a lado
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_eq_global, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(f"2. Imagen original ecualizada (global)")
-    axes[1].axis("off")
-
-    plt.show(block=False)
-
-    # ---------------------------------------------------------------------------------------------------
-
-    # Parámetros (M y N deben ser impares)
-    M = 25  # Alto de la ventana
-    N = 25  # Ancho de la ventana
-
-    # Aplicar la función directamente a la imagen original con ruido
-    # Ecualizacion local con ventana 25x25
-    img_procesada = ecualizar_local(img_original, M, N)
-
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_procesada, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(
-        f"2. Imagen original ecualizada (local) con salt & pepper {M}x{N}"
+    mostrar_comparacion(
+        img_original,
+        img_eq_global,
+        "1. Imagen Original",
+        "2. Imagen original ecualizada (global)",
     )
-    axes[1].axis("off")
 
-    plt.show(block=False)
-
-    # Mostrar el histograma de la imagen procesada
-    histograma(img_procesada)
+    # Ecualizacion local con ventana 25x25 directamente sobre la imagen original
+    img_procesada_25x25 = procesar_con_ventana(
+        img_original, 25, 25, mostrar_histograma=False
+    )
+    mostrar_comparacion(
+        img_original,
+        img_procesada_25x25,
+        "1. Imagen Original",
+        "2. Imagen original ecualizada (local) con salt & pepper 25x25",
+    )
+    histograma(img_procesada_25x25)
 
     # Aplicar un filtro de la mediana para eliminar el ruido fino antes de la ecualización.
     # 3 es un tamaño de kernel pequeño que preserva los bordes.
     img_suavizada = cv2.medianBlur(img_original, 3)
+    mostrar_comparacion(
+        img_original, img_suavizada, "1. Imagen Original", "2. Imagen suavizada con k=3"
+    )
 
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
+    # Probar diferentes tamaños de ventana sobre la imagen suavizada
+    tamaños_ventana = [5, 25, 75]
 
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_suavizada, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(f"2. Imagen suavizada con k=3")
-    axes[1].axis("off")
-
-    plt.show(block=False)
-
-    # ---------------------------------------------------------------------------------------------------
-
-    # VENTANA DE 5X5 (TAMAÑO CHICO)
-
-    # Parámetros (M y N deben ser impares)
-    M = 5  # Alto de la ventana
-    N = 5  # Ancho de la ventana
-
-    # Aplicar la función
-    img_procesada = ecualizar_local(img_suavizada, M, N)
-
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_procesada, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(f"2. Ecualización Local Manual (Ventana {M}x{N})")
-    axes[1].axis("off")
-
-    plt.show(block=False)
-
-    # Mostrar el histograma de la imagen procesada
-    histograma(img_procesada)
-
-    # ---------------------------------------------------------------------------------------------------
-
-    # VENTANA DE 25X25 (TAMAÑO MEDIANO)
-
-    # Parámetros (M y N deben ser impares)
-    M = 25  # Alto de la ventana
-    N = 25  # Ancho de la ventana
-
-    # Aplicar la función
-    img_procesada = ecualizar_local(img_suavizada, M, N)
-
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_procesada, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(f"2. Ecualización Local Manual (Ventana {M}x{N})")
-    axes[1].axis("off")
-
-    plt.show(block=False)
-
-    # Mostrar el histograma de la imagen procesada
-    histograma(img_procesada)
-
-    # -------------------------------------------------------------------------------------
-
-    # VENTANA DE 75X75 (TAMAÑO GRANDE)
-
-    # Parámetros (M y N deben ser impares)
-    M = 75  # Alto de la ventana
-    N = 75  # Ancho de la ventana
-
-    # Aplicar la función
-    img_procesada = ecualizar_local(img_suavizada, M, N)
-
-    # Mostrar los resultados
-    _, axes = plt.subplots(1, 2, figsize=(15, 6))
-
-    axes[0].imshow(img_original, cmap="gray", vmin=0, vmax=255)
-    axes[0].set_title("1. Imagen Original")
-    axes[0].axis("off")
-
-    axes[1].imshow(img_procesada, cmap="gray", vmin=0, vmax=255)
-    axes[1].set_title(f"2. Ecualización Local Manual (Ventana {M}x{N})")
-    axes[1].axis("off")
-
-    plt.show(block=False)
-
-    # Mostrar el histograma de la imagen procesada
-    histograma(img_procesada)
+    for M in tamaños_ventana:
+        N = M  # Ventana cuadrada
+        img_procesada = procesar_con_ventana(
+            img_suavizada, M, N, mostrar_histograma=True
+        )
+        mostrar_comparacion(
+            img_original,
+            img_procesada,
+            "1. Imagen Original",
+            f"2. Ecualización Local Manual (Ventana {M}x{N})",
+        )
 
 
 if __name__ == "__main__":
