@@ -325,10 +325,13 @@ def calcular_palabras(roi: np.ndarray, campo: str) -> int:
 
     return numero_palabras
 
+def detectar_tipo_formulario( img: np.ndarray) -> str:
+    pass
+
 
 def analisis_formulario(
     img: np.ndarray, mostrar_graficos: bool = True
-) -> Tuple[Dict[str, Dict[str, bool]], bool]:
+) -> Tuple[str, Dict[str, Dict[str, bool]], bool]:
     """Analiza un formulario completo, validando cada campo según criterios específicos de caracteres y palabras."""
 
     img.dtype
@@ -411,6 +414,7 @@ def analisis_formulario(
         resultados["es_valido"] = all(resultados.values())
 
     return (
+        detectar_tipo_formulario(zona_interes["tipo_formulario"]),
         resultado_validaciones,
         all(resultados["es_valido"] for resultados in resultado_validaciones.values()),
     )
