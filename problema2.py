@@ -1,6 +1,7 @@
 from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import numpy as np
 from typing import Tuple, Dict
 import csv
@@ -325,8 +326,39 @@ def calcular_palabras(roi: np.ndarray, campo: str) -> int:
 
     return numero_palabras
 
-def detectar_tipo_formulario( img: np.ndarray) -> str:
-    pass
+
+def detectar_tipo_formulario(img: np.ndarray, mostrar_graficos: bool = True) -> str:
+    img_invertida = 255 - img
+
+    _, _, stats, _ = cv2.connectedComponentsWithStats(
+        img_invertida, connectivity=8, ltype=cv2.CV_32S
+    )
+
+    bounding_box = stats[stats[:, 0].argsort()][-1]
+    x, y, w, h, _ = bounding_box
+    zona_bounding_box = img_invertida[y : y + h, x : x + w]
+
+    if mostrar_graficos:
+        _, axes = plt.subplots(1, 2, figsize=(10, 5), constrained_layout=True)
+
+        axes[0].imshow(img_invertida, cmap="gray", vmin=0, vmax=255)
+        rect = Rectangle((x, y), w, h, edgecolor="lime", facecolor="none", linewidth=2)
+        axes[0].add_patch(rect)
+        axes[0].set_title('Bounding box sobre "tipo_formulario"')
+        axes[0].axis("off")
+
+        axes[1].imshow(zona_bounding_box, cmap="gray", vmin=0, vmax=255)
+        axes[1].set_title("Zona del bounding box")
+        axes[1].axis("off")
+
+        plt.show(block=False)
+
+    # A = 134
+    # B = 152
+    # C != 115
+    cuenta_zero = np.count_nonzero(zona_bounding_box)
+
+    return "A" if cuenta_zero == 134 else "B" if cuenta_zero == 152 else "C"
 
 
 def analisis_formulario(
@@ -414,7 +446,7 @@ def analisis_formulario(
         resultados["es_valido"] = all(resultados.values())
 
     return (
-        detectar_tipo_formulario(zona_interes["tipo_formulario"]),
+        detectar_tipo_formulario(zona_interes["tipo_formulario"], mostrar_graficos),
         resultado_validaciones,
         all(resultados["es_valido"] for resultados in resultado_validaciones.values()),
     )
@@ -456,10 +488,12 @@ def main():
 
     # Punto A y B
     for i, img in enumerate(imagenes):
-        resultado_validaciones, es_valido = analisis_formulario(img, False)
+        tipo_formulario, resultado_validaciones, es_valido = analisis_formulario(
+            img, True
+        )
 
         print("--------------------------------\n")
-        print(f"Formulario {formularios[i].name}:")
+        print(f"Formulario {formularios[i].name} tipo {tipo_formulario}")
         for campo, resultados in resultado_validaciones.items():
             resultado = "OK" if resultados["es_valido"] else "MAL"
             print(f"  - {campo}: {resultado}")
